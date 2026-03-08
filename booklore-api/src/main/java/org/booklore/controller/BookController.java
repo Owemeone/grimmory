@@ -72,6 +72,15 @@ public class BookController {
         return ResponseEntity.ok(bookService.getBookDTOs(withDescription));
     }
 
+    @Operation(summary = "Search books by title or ISBN", description = "Search for books using fuzzy title matching or ISBN. At least one search parameter must be provided. Returns matching books with cover, title, and hash.")
+    @ApiResponse(responseCode = "200", description = "Search results returned successfully")
+    @GetMapping("/search")
+    public ResponseEntity<List<org.booklore.model.dto.response.BookSearchResult>> searchBooks(
+            @Parameter(description = "Title to search for") @RequestParam(required = false) String title,
+            @Parameter(description = "ISBN to search for (ISBN-10 or ISBN-13)") @RequestParam(required = false) String isbn) {
+        return ResponseEntity.ok(bookService.fuzzySearch(title, isbn));
+    }
+
     @Operation(summary = "Get a book by ID", description = "Retrieve details of a specific book by its ID.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Book details returned successfully"),
@@ -83,6 +92,18 @@ public class BookController {
             @Parameter(description = "ID of the book to retrieve") @PathVariable long bookId,
             @Parameter(description = "Include book description in the response") @RequestParam(required = false, defaultValue = "false") boolean withDescription) {
         return ResponseEntity.ok(bookService.getBook(bookId, withDescription));
+    }
+
+    @Operation(summary = "Get book by MD5 hash", description = "Retrieve book details by MD5 hash. Used by KOReader to map local books to Booklore books. ISBN values are available in metadata.isbn10 and metadata.isbn13.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Book found and details returned including ISBN values in metadata"),
+            @ApiResponse(responseCode = "404", description = "Book not found with this hash")
+    })
+    @GetMapping("/by-hash/{md5Hash}")
+    public ResponseEntity<Book> getBookByHash(
+            @Parameter(description = "MD5 hash of the book file") @PathVariable String md5Hash,
+            @Parameter(description = "Include book description in the response") @RequestParam(required = false, defaultValue = "false") boolean withDescription) {
+        return ResponseEntity.ok(bookService.getBookByHash(md5Hash, withDescription));
     }
 
     @Operation(summary = "Create a physical book", description = "Create a physical book without digital files. Requires library management permission or admin.")
@@ -294,4 +315,5 @@ public class BookController {
             @Parameter(description = "Request containing source book IDs and delete option") @RequestBody @Valid AttachBookFileRequest request) {
         return ResponseEntity.ok(bookFileAttachmentService.attachBookFiles(targetBookId, request.getSourceBookIds(), request.isMoveFiles()));
     }
+
 }
