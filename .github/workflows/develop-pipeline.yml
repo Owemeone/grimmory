@@ -1,6 +1,7 @@
 name: Develop & PR – Build, Test, and Container Publish
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
